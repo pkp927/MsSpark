@@ -1,0 +1,11 @@
+GetFrameAtoms.class
+VecCalc.class
+ConvertToStringVector.class
+VectorRDD.class
+OneBodyQuery.class
+Print.class
+AddVec.class
+FrameAtomsMapper.class
+ConvertToMOIVec.class
+MSApp.class
+FrameAtomsRDD.class
