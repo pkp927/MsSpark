@@ -2,6 +2,7 @@
 /* MSApp.java */
 import org.apache.spark.api.java.*;
 
+import java.io.File;
 import java.io.Serializable;
 
 import org.apache.hadoop.io.Text;
@@ -12,161 +13,170 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.Function3;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.SQLContext;
+import org.apache.spark.sql.SaveMode;
 
 import scala.Tuple2;
 
-
+/* MSApp class is the main class to get the files input
+ * and generate output files
+ */
 public class MSApp {
   public static void main(String[] args) {
 
+    // create SparkContext object to access clusters
     SparkConf conf = new SparkConf().setAppName("MS Application");
     JavaSparkContext sc = new JavaSparkContext(conf);
-    
-    String inputLoc = "hdfs://localhost:54310/example/data.txt";
+    SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
+
+    // specify input and output location of files
+    //String inputLoc = "hdfs://localhost:54310/example/data.txt";
     //String outputLoc = "hdfs://localhost:54310/example/output";
-    String outputLoc = "/home/simi/spark-1.5.1/thesis/MsSpark/output";
-    FrameAtomsRDD distData = new FrameAtomsRDD(sc, inputLoc);
+    String inputLoc = "/home/simi/Desktop/thesis/data.txt";
+    String outputLoc = "/home/simi/spark-1.5.1/abc/output";
+    String moiCacheLoc = "/home/simi/spark-1.5.1/abc/moi";
     
-    VectorRDD MOI = OneBodyQuery.getMOI(distData);
-    MOI.getVectorRDD().saveAsTextFile(outputLoc);
-    //MOI.getVectorRDD().foreach(new Print());
-    
-    /*
-    JavaRDD<String> distData = sc.textFile("hdfs://localhost:54310/example/data.txt");
+    File f = new File(outputLoc);
+    if(f.exists()){
+	    String[] entries = f.list();
+	    for(String s: entries){
+	    	File currentFile = new File(f.getPath(),s);
+	    	currentFile.delete();
+	    }
+	    f.delete();
+    }
 
-    Broadcast<Integer> frameNo = sc.broadcast(00000000); 
+    // create FrameAtomsRDD out of input data
+    //FrameAtomsRDD distData = new FrameAtomsRDD(sc, inputLoc);
     
-    JavaRDD<String> frame = distData.filter(new GetFrameAtoms(frameNo));
-    frame.cache();
+    // set the parameters for the selection of desired atoms
+    String[] parameters = new String[7];
+    parameters[0] = "90";     // first frame
+    parameters[1] = "95";    // last frame
+    parameters[2] = "";      // skip
+    parameters[3] = "";      // min boundary
+    parameters[4] = "";		 // max boundary
+    parameters[5] = "";		 // atom type
+    parameters[6] = "";		 // atom id
     
-    // Calculate Moment of Inertia
-    JavaRDD<VecCalc> mc = frame.map(new ConvertToMOIVec());
-    VecCalc moi = mc.reduce(new AddVec());
-    System.out.println("MOI : "+moi.x+" "+moi.y+" "+moi.z); 
+    boolean cached = false;
     
-    // Calculate Sum of Masses
-    JavaRDD<Double> m = frame.map(new GetMass());
-    Double mass = m.reduce(new Add());
-    System.out.println("Mass : "+mass);
+    if(cached){
+    	DataFrame parquetFile = sqlContext.read().parquet(moiCacheLoc+"/moiCache.parquet");
+    	parquetFile.registerTempTable("parquetFile");
+    	DataFrame result = sqlContext.sql("SELECT * FROM parquetFile WHERE frameNo >= "+parameters[0]+" AND frameNo <= "+parameters[1]);
+    	result.show();
+    }
     
-    // Calculate Center of Mass
-    VecCalc com = new VecCalc(moi.x/mass, moi.y/mass, moi.z/mass);
-    System.out.println("COM : "+com.x+" "+com.y+" "+com.z);
+    if(!cached){
+    	// create SelectedAtomsRDD of desired atoms out of the input data
+        SelectedAtomsRDD selData = new SelectedAtomsRDD(sc, inputLoc, parameters);
+           
+        // execute the query -> Moment of Inertia
+        VectorRDD MOI = OneBodyQuery.getMOI(selData);
+        
+        // save the result in the output folder
+        MOI.getVectorRDD().coalesce(1,true).saveAsTextFile(outputLoc);
+        //MOI.getVectorRDD().foreach(new PrintVecTuple());
+        
+        // cache the result
+        final String minB = parameters[3]; 
+        final String maxB = parameters[4]; 
+        
+        JavaRDD<MOIschema> moiCache = MOI.getVectorRDD().map(
+        		new Function<Tuple2<Integer, Vector3D>, MOIschema>(){
 
-    // Calculate Radius of Gyration
-    System.out.println("ROG : "+com.z/mass);
+    				public MOIschema call(Tuple2<Integer, Vector3D> t) throws Exception {
+    					MOIschema ms = new MOIschema();
+    					ms.setFrameNo(t._1);
+    					/*
+    					if(!minB.isEmpty()){
+    						String[] split = minB.split("\\s+");
+     						double x = Double.parseDouble(split[0]);
+     						double y = Double.parseDouble(split[1]);
+     						double z = Double.parseDouble(split[2]);
+     						ms.setMin(new Vector3D(x,y,z));
+    					}
+    					if(!maxB.isEmpty()){
+    						String[] split = maxB.split("\\s+");
+     						double x = Double.parseDouble(split[0]);
+     						double y = Double.parseDouble(split[1]);
+     						double z = Double.parseDouble(split[2]);
+     						ms.setMax(new Vector3D(x,y,z));
+    					}
+    					*/
+    					ms.setMOIx(t._2().x);
+    					ms.setMOIy(t._2().y);
+    					ms.setMOIz(t._2().z);
+    					return ms;
+    				}
+        			
+        		});
 
-    // Calculate Dipole Moment
-    JavaRDD<VecCalc> dc = frame.map(new ConvertToDMVec());
-    VecCalc dm = dc.reduce(new AddVec());
-    System.out.println("DM : "+dm.x+" "+dm.y+" "+dm.z);
+        DataFrame MOIdf = sqlContext.createDataFrame(moiCache, MOIschema.class);
+        MOIdf.show();
+        MOIdf.save(moiCacheLoc+"/moiCache.parquet", SaveMode.Append);
+    }
     
-    */
-    
+  }
+
+  public static class MOIschema implements Serializable{
+	  private int frameNo;
+	  //private Vector3D min;
+	  //private Vector3D max;
+	  private double MOIx;
+	  private double MOIy;
+	  private double MOIz;
+	/*  
+	public Vector3D getMax() {
+		return max;
+	}
+	public void setMax(Vector3D max) {
+		this.max = max;
+	}
+	public Vector3D getMin() {
+		return min;
+	}
+	public void setMin(Vector3D min) {
+		this.min = min;
+	}
+	*/
+	public int getFrameNo() {
+		return frameNo;
+	}
+	public void setFrameNo(int frameNo) {
+		this.frameNo = frameNo;
+	}
+	public double getMOIz() {
+		return MOIz;
+	}
+	public void setMOIz(double mOIz) {
+		MOIz = mOIz;
+	}
+	public double getMOIy() {
+		return MOIy;
+	}
+	public void setMOIy(double mOIy) {
+		MOIy = mOIy;
+	}
+	public double getMOIx() {
+		return MOIx;
+	}
+	public void setMOIx(double mOIx) {
+		MOIx = mOIx;
+	}
   }
 
 }
 
-class Print implements VoidFunction<Tuple2<Integer, VecCalc>>{
+class PrintVecTuple implements VoidFunction<Tuple2<Integer, Vector3D>>{
 
-	public void call(Tuple2<Integer, VecCalc> t) throws Exception {
+	public void call(Tuple2<Integer, Vector3D> t) throws Exception {
 		System.out.print(t._1+" : ");
 		t._2().printValues();
 		System.out.println();
 	}
 	
 }
-
-/*
-class Add implements Function2<Double, Double, Double>{
-
-	public Double call(Double d1, Double d2) {
-		return d1+d2;
-	}
-	
-}
-
-class GetMass implements Function<String, Double>{
-
-	public Double call(String s){
-		String[] splitted = s.split("\\s+");
-		return Double.parseDouble(splitted[8]);
-	}
-	
-}
-
-class AddVec implements Function2<VecCalc, VecCalc, VecCalc>{
-
-	public VecCalc call(VecCalc mc1, VecCalc mc2) throws Exception {
-		return mc1.add(mc2);
-	}
-	
-}
-
-class ConvertToDMVec implements Function<String, VecCalc>{
-
-	public VecCalc call(String s){
-		String[] splitted = s.split("\\s+");
-		VecCalc mc = new VecCalc();
-		mc.x = Double.parseDouble(splitted[4])*Double.parseDouble(splitted[7]);
-		mc.y = Double.parseDouble(splitted[5])*Double.parseDouble(splitted[7]);
-		mc.z = Double.parseDouble(splitted[6])*Double.parseDouble(splitted[7]);
-		return mc;
-	}
-	
-}
-
-class ConvertToMOIVec implements Function<String, VecCalc>{
-
-	public VecCalc call(String s){
-		String[] splitted = s.split("\\s+");
-		VecCalc mc = new VecCalc();
-		mc.x = Double.parseDouble(splitted[4])*Double.parseDouble(splitted[8]);
-		mc.y = Double.parseDouble(splitted[5])*Double.parseDouble(splitted[8]);
-		mc.z = Double.parseDouble(splitted[6])*Double.parseDouble(splitted[8]);
-		return mc;
-	}
-	
-}
-
-class VecCalc implements Serializable{
-	
-	public double x, y, z;
-	
-	public VecCalc(){
-		x = 0; y = 0; z = 0;
-	}
-	
-	public VecCalc(double a, double b, double c){
-		x = a; y = b; z = c;
-	}
-	
-	public VecCalc add(VecCalc mc){
-		return new VecCalc(x+mc.x, y+mc.y, z+mc.z);
-	}
-	
-}
-
-class GetFrameAtoms implements Function<String, Boolean> {
-        
-	  Broadcast<Integer> frameNo;
-
-      public GetFrameAtoms(Broadcast<Integer> f){
-                frameNo = f;
-      }
-
-	  public Boolean call(String s) { 
-		  String[] splitted = s.split("\\s+");
-		  if(splitted[0].equals("ATOM") && Integer.parseInt(splitted[1]) == frameNo.value()){
-			  return true;
-		  }
-		  return false;
-	  }
-}
-
-*/
-
-
-
-
 

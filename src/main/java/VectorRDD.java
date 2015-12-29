@@ -4,35 +4,47 @@ import java.io.Serializable;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 
+/* VectorRDD class to represent vector data type
+ * and operations on this data type
+ */
 public class VectorRDD implements Serializable{
 
-	private JavaPairRDD<Integer, VecCalc> vec;
-	
+    // frame number is mapped to vector quantity
+	private JavaPairRDD<Integer, Vector3D> vec;
+
+    // default constructor
 	public VectorRDD(){
 		this.vec = null;
 	}
-	
-	public VectorRDD(JavaPairRDD<Integer, VecCalc> v){
+
+    // constructor
+	public VectorRDD(JavaPairRDD<Integer, Vector3D> v){
 		this.vec = v;
 	}
-	
-	public void setVectorRDD(JavaPairRDD<Integer, VecCalc> v){
+
+    // setter method
+	public void setVectorRDD(JavaPairRDD<Integer, Vector3D> v){
 		this.vec = v;
 	}
-	
-	public JavaPairRDD<Integer, VecCalc> getVectorRDD(){
+
+    // getter method
+	public JavaPairRDD<Integer, Vector3D> getVectorRDD(){
 		return this.vec;
 	}
-	
+
+    // convert to string representation
 	public JavaPairRDD<Integer, String> getStringVector(){
 		return vec.mapValues(new ConvertToStringVector());
 	}
 	
 }
 
-class ConvertToStringVector implements Function<VecCalc, String>{
+/* ConvertToStringVector class is used to convert the
+ * vectorRDD to string representation
+ */
+class ConvertToStringVector implements Function<Vector3D, String>{
 
-	public String call(VecCalc vc) throws Exception {
+	public String call(Vector3D vc) throws Exception {
 		return vc.toString();
 	}
 	
