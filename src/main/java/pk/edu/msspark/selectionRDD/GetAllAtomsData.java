@@ -3,8 +3,8 @@ package pk.edu.msspark.selectionRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.broadcast.Broadcast;
 
-/* GetAtoms class to filter the atoms data out of
- * raw data in the file
+/* GetAllAtomsData class to filter the atoms data 
+ * out of raw data in the file
  */
 class GetAllAtomsData implements Function<String, Boolean> {
 	
@@ -17,6 +17,7 @@ class GetAllAtomsData implements Function<String, Boolean> {
 	
 	  public Boolean call(String s) { 
 		  String[] splitted = s.split("\\s+");
+		  // check for info index
 		  if(splitted[info_index.value()].equals("ATOM")){
 			  return true;
 		  }

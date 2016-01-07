@@ -11,6 +11,7 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import pk.edu.msspark.utils.*;
+
 /* SelectedAtomsRDD class to support the Molecular Simulation data
  * which is in the form of frame number paired with the data
  * corresponding to the atoms in the that frame
@@ -38,10 +39,10 @@ public class SelectedAtomsRDD implements Serializable, FileFormat{
 	private JavaPairRDD<Integer, Double[]> selection;
 	
 	// constructor to create RDD of the desired atoms	
-	public SelectedAtomsRDD(JavaSparkContext sc, String inputLocation, String[] parameters){
+	public SelectedAtomsRDD(JavaSparkContext sc, String inputLocation, SelectParameters param){
 
 		// broadcast the variables
-		broadcastVar(sc, parameters);
+		broadcastVar(sc, param);
 		
 		// set the RDD of desired atoms
 		/*this.setSelectedAtomsRDD(sc.textFile(inputLocation)
@@ -55,10 +56,10 @@ public class SelectedAtomsRDD implements Serializable, FileFormat{
 	}
 	
 	// constructor to create RDD of the desired atoms	
-	public SelectedAtomsRDD(JavaSparkContext sc, FrameAtomsRDD far, String[] parameters){
+	public SelectedAtomsRDD(JavaSparkContext sc, FrameAtomsRDD far, SelectParameters param){
 		
 			// broadcast the variables
-			broadcastVar(sc, parameters);
+			broadcastVar(sc, param);
 			
 			// set the RDD of desired atoms
 			this.setSelectedAtomsRDD(far.getFrameAtomsRDD().
@@ -66,13 +67,13 @@ public class SelectedAtomsRDD implements Serializable, FileFormat{
 			
 	}
 	
-	private void broadcastVar(JavaSparkContext sc, String[] parameters){
+	private void broadcastVar(JavaSparkContext sc, SelectParameters param){
 
 		// broadcast the parameters
-		firstFrame = sc.broadcast(Integer.parseInt(parameters[0]));
-		lastFrame = sc.broadcast(Integer.parseInt(parameters[1]));
-		if(!parameters[2].isEmpty()){
-			String[] splitted = parameters[2].split("\\s+");
+		firstFrame = sc.broadcast(param.firstFrame);
+		lastFrame = sc.broadcast(param.lastFrame);
+		if(!param.skip.isEmpty()){
+			String[] splitted = param.skip.split("\\s+");
 			int[] sk = new int[splitted.length];
 			for(int i=0; i<splitted.length; i++){
 				sk[i] = Integer.parseInt(splitted[i]);
@@ -81,27 +82,23 @@ public class SelectedAtomsRDD implements Serializable, FileFormat{
 		}else{
 			skip = sc.broadcast(null);
 		}
-		if(!parameters[3].isEmpty()){
-			String[] sp = parameters[3].split("\\s+");
-			Vector3D v = new Vector3D(Double.parseDouble(sp[0]),Double.parseDouble(sp[1]),Double.parseDouble(sp[2]));
-			min = sc.broadcast(v);
+		if(param.minBound != null){
+			min = sc.broadcast(param.minBound);
 		}else{
 			min = sc.broadcast(null);
 		}
-		if(!parameters[4].isEmpty()){
-			String[] sp = parameters[4].split("\\s+");
-			Vector3D v = new Vector3D(Double.parseDouble(sp[0]),Double.parseDouble(sp[1]),Double.parseDouble(sp[2]));
-			max = sc.broadcast(v);
+		if(param.maxBound != null){
+			max = sc.broadcast(param.maxBound);
 		}else{
 			max = sc.broadcast(null);
 		}
 		
 		// broadcast file format
-		info_index = sc.broadcast(INFO_INDEX);
-		frame_no_index = sc.broadcast(FRAME_NO_INDEX);
-		row_length = sc.broadcast(ROW_LENGTH);
-		offset = sc.broadcast(FRAME_NO_INDEX + 1);
-		pos = sc.broadcast(POS_VEC_INDEX);
+		info_index = sc.broadcast(FileFormat.INFO_INDEX);
+		frame_no_index = sc.broadcast(FileFormat.FRAME_NO_INDEX);
+		row_length = sc.broadcast(FileFormat.ROW_LENGTH);
+		offset = sc.broadcast(FileFormat.FRAME_NO_INDEX + 1);
+		pos = sc.broadcast(FileFormat.POS_VEC_INDEX);
 	}
 	
 	// setter of RDD

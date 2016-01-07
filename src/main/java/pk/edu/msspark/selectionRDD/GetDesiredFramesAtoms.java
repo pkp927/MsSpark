@@ -6,10 +6,13 @@ import org.apache.spark.broadcast.Broadcast;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-/* GetDesiredAtoms class to create rdd of desired atoms
+/* GetDesiredFrameAtoms class to return rdd of desired atoms
+ * and frames from given pair rdd of all frames and atoms.
+ * It is a combination of GetDesiredFrames and GetDesiredAtoms.
  */
 class GetDesiredFramesAtoms implements Function<Tuple2<Integer, Double[]>, Boolean>{
 
+	// parameters for desired data
 	Broadcast<Integer> firstFrame;
 	Broadcast<Integer> lastFrame;
 	Broadcast<int[]> skip;
@@ -18,7 +21,7 @@ class GetDesiredFramesAtoms implements Function<Tuple2<Integer, Double[]>, Boole
 	Broadcast<Double[]> atomTypes;
 	Broadcast<Double[]> atomIds;
 	
-
+	// index of data
 	Broadcast<Integer> offset;
 	Broadcast<Integer> pos;
 
@@ -35,6 +38,7 @@ class GetDesiredFramesAtoms implements Function<Tuple2<Integer, Double[]>, Boole
     }
 	
 	public Boolean call(Tuple2<Integer, Double[]> t) throws Exception {
+		// check if desired frame
 		if(t._1 >= firstFrame.value() && t._1 <= lastFrame.value()){
 			int[] a = skip.value();
 			if( a != null ){
@@ -44,6 +48,7 @@ class GetDesiredFramesAtoms implements Function<Tuple2<Integer, Double[]>, Boole
 					}
 				}
 			}
+			// check if desired atom
 			Vector3D mn = min.value();
 			Vector3D mx = max.value();
 			int i = pos.value() - offset.value();

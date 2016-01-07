@@ -3,8 +3,9 @@ package pk.edu.msspark.selectionRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.broadcast.Broadcast;
 
-/* GetAtoms class to filter the atoms data out of
- * raw data in the file
+/* GetDesiredAtomsData class to filter the 
+ * atoms data of desired frames out of raw 
+ * data in the file
  */
 class GetDesiredAtomsData implements Function<String, Boolean> {
 	
@@ -13,6 +14,7 @@ class GetDesiredAtomsData implements Function<String, Boolean> {
 	  Broadcast<Integer> frame_no_index;
 	  Broadcast<Integer> row_length;
 	  
+	  // parameters for desired frame
 	  Broadcast<Integer> firstFrame;
 	  Broadcast<Integer> lastFrame;
 	  Broadcast<int[]> skip;
@@ -28,7 +30,9 @@ class GetDesiredAtomsData implements Function<String, Boolean> {
 	
 	  public Boolean call(String s) { 
 		  String[] splitted = s.split("\\s+");
+		  // check info index
 		  if(splitted[info_index.value()].equals("ATOM")){
+			  // check if desired frame 
 			  int frameNo = Integer.parseInt(splitted[frame_no_index.value()]);
 			  if(frameNo >= firstFrame.value() && frameNo <= lastFrame.value()){
 				  int[] a = skip.value();
