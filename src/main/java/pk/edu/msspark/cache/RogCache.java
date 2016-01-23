@@ -8,31 +8,30 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SaveMode;
-import pk.edu.msspark.resultRDD.VectorRDD;
+import pk.edu.msspark.resultRDD.ScalarRDD;
 import pk.edu.msspark.utils.SelectParameters;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-public class MoiCache {
+public class RogCache {
 	
-	  public static SelectParameters checkMOIcache(SQLContext sqlContext, String moiCacheLoc, SelectParameters param){
-		  File f = new File(moiCacheLoc+"/moiCache.parquet");
-		  if(!f.exists()){param.cached = false; return param;}  
-		  DataFrame parquetFile = sqlContext.read().parquet(moiCacheLoc+"/moiCache.parquet");
+	  public static SelectParameters checkROGcache(SQLContext sqlContext, String rogCacheLoc, SelectParameters param){
+		  	File f = new File(rogCacheLoc+"/rogCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;} 
+		    DataFrame parquetFile = sqlContext.read().parquet(rogCacheLoc+"/rogCache.parquet");
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
 
 	    	String query = "SELECT DISTINCT * FROM parquetFile "
 					+ "WHERE frameNo >= "+param.firstFrame+" AND frameNo <= "+param.lastFrame;
-	    	if(!param.skip.isEmpty()){
-	    		query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
-	    	}
-
+	    	
 	    	if(!param.skip.isEmpty()) query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
 	    	if(param.minBound != null) query = query + " AND minx="+param.minBound.x+" AND miny="+param.minBound.y+ " AND minz="+param.minBound.z;
 	    	else query = query + " AND minx=0 AND miny=0 AND minz=0";	    	 
 	    	if(param.maxBound != null) query = query + " AND maxx="+param.maxBound.x+" AND maxy="+param.maxBound.y+ " AND maxz="+param.maxBound.z;
 	    	else query = query + " AND maxx=0 AND maxy=0 AND maxz=0";
+	    	if(param.axis != null) query = query + " AND axis="+param.axis;
+		    else query = query + " AND axis=\"z\"";
 	    	
 	    	result = sqlContext.sql(query);
 	    	result.show();
@@ -43,15 +42,16 @@ public class MoiCache {
 	    	return param;
 	  }
 
-	  public static void cacheMOIresult(SQLContext sqlContext, VectorRDD MOI, String moiCacheLoc, SelectParameters param){
+	  public static void cacheROGresult(SQLContext sqlContext, ScalarRDD ROG, String rogCacheLoc, SelectParameters param){
 		    final Vector3D minB = param.minBound; 
 	        final Vector3D maxB = param.maxBound; 
+	        final String axis = param.axis;
 	        
-	        JavaRDD<MOIschema> moiCache = MOI.getVectorRDD().map(
-	        		new Function<Tuple2<Integer, Vector3D>, MOIschema>(){
+	        JavaRDD<ROGschema> ROGCache = ROG.getScalarRDD().map(
+	        		new Function<Tuple2<Integer, Double>, ROGschema>(){
 
-	    				public MOIschema call(Tuple2<Integer, Vector3D> t) throws Exception {
-	    					MOIschema ms = new MOIschema();
+	    				public ROGschema call(Tuple2<Integer, Double> t) throws Exception {
+	    					ROGschema ms = new ROGschema();
 	    					ms.setFrameNo(t._1);
 	    					
 	    					if(minB != null){
@@ -65,20 +65,20 @@ public class MoiCache {
 	     						ms.setMaxz(maxB.z);
 	    					}
 	    					
-	    					ms.setMOIx(t._2().x);
-	    					ms.setMOIy(t._2().y);
-	    					ms.setMOIz(t._2().z);
+	    					ms.setROG(t._2());
+	    					ms.setAxis(axis);
+	    					
 	    					return ms;
 	    				}
 	        			
 	        		});
 
-	        DataFrame MOIdf = sqlContext.createDataFrame(moiCache, MOIschema.class);
-	        MOIdf.show();
-	        MOIdf.save(moiCacheLoc+"/moiCache.parquet", SaveMode.Append);
+	        DataFrame ROGdf = sqlContext.createDataFrame(ROGCache, ROGschema.class);
+	        ROGdf.show();
+	        ROGdf.save(rogCacheLoc+"/rogCache.parquet", SaveMode.Append);
 	  }
 
-	  public static class MOIschema implements Serializable{
+	  public static class ROGschema implements Serializable{
 		  private int frameNo;
 		  private double minx;
 		  private double miny;
@@ -86,9 +86,8 @@ public class MoiCache {
 		  private double maxx;
 		  private double maxy;
 		  private double maxz;
-		  private double MOIx;
-		  private double MOIy;
-		  private double MOIz;		  
+		  private double ROG;	
+		  private String axis;
 		
 		public int getFrameNo() {
 			return frameNo;
@@ -96,23 +95,11 @@ public class MoiCache {
 		public void setFrameNo(int frameNo) {
 			this.frameNo = frameNo;
 		}
-		public double getMOIz() {
-			return MOIz;
+		public double getROG() {
+			return ROG;
 		}
-		public void setMOIz(double mOIz) {
-			MOIz = mOIz;
-		}
-		public double getMOIy() {
-			return MOIy;
-		}
-		public void setMOIy(double mOIy) {
-			MOIy = mOIy;
-		}
-		public double getMOIx() {
-			return MOIx;
-		}
-		public void setMOIx(double mOIx) {
-			MOIx = mOIx;
+		public void setROG(double ROG) {
+			this.ROG = ROG;
 		}
 		public double getMaxz() {
 			return maxz;
@@ -149,6 +136,12 @@ public class MoiCache {
 		}
 		public void setMinx(double minx) {
 			this.minx = minx;
+		}
+		public String getAxis() {
+			return axis;
+		}
+		public void setAxis(String axis) {
+			this.axis = axis;
 		}
 	  }
 

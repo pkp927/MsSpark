@@ -8,17 +8,17 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SaveMode;
-import pk.edu.msspark.resultRDD.VectorRDD;
+import pk.edu.msspark.resultRDD.ScalarRDD;
 import pk.edu.msspark.utils.SelectParameters;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-public class MoiCache {
+public class SomCache {
 	
-	  public static SelectParameters checkMOIcache(SQLContext sqlContext, String moiCacheLoc, SelectParameters param){
-		  File f = new File(moiCacheLoc+"/moiCache.parquet");
-		  if(!f.exists()){param.cached = false; return param;}  
-		  DataFrame parquetFile = sqlContext.read().parquet(moiCacheLoc+"/moiCache.parquet");
+	  public static SelectParameters checkSOMcache(SQLContext sqlContext, String somCacheLoc, SelectParameters param){
+		    File f = new File(somCacheLoc+"/somCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;} 
+		  	DataFrame parquetFile = sqlContext.read().parquet(somCacheLoc+"/somCache.parquet");
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
 
@@ -43,15 +43,15 @@ public class MoiCache {
 	    	return param;
 	  }
 
-	  public static void cacheMOIresult(SQLContext sqlContext, VectorRDD MOI, String moiCacheLoc, SelectParameters param){
+	  public static void cacheSOMresult(SQLContext sqlContext, ScalarRDD SOM, String somCacheLoc, SelectParameters param){
 		    final Vector3D minB = param.minBound; 
 	        final Vector3D maxB = param.maxBound; 
 	        
-	        JavaRDD<MOIschema> moiCache = MOI.getVectorRDD().map(
-	        		new Function<Tuple2<Integer, Vector3D>, MOIschema>(){
+	        JavaRDD<SOMschema> SOMCache = SOM.getScalarRDD().map(
+	        		new Function<Tuple2<Integer, Double>, SOMschema>(){
 
-	    				public MOIschema call(Tuple2<Integer, Vector3D> t) throws Exception {
-	    					MOIschema ms = new MOIschema();
+	    				public SOMschema call(Tuple2<Integer, Double> t) throws Exception {
+	    					SOMschema ms = new SOMschema();
 	    					ms.setFrameNo(t._1);
 	    					
 	    					if(minB != null){
@@ -65,20 +65,18 @@ public class MoiCache {
 	     						ms.setMaxz(maxB.z);
 	    					}
 	    					
-	    					ms.setMOIx(t._2().x);
-	    					ms.setMOIy(t._2().y);
-	    					ms.setMOIz(t._2().z);
+	    					ms.setSOM(t._2());
 	    					return ms;
 	    				}
 	        			
 	        		});
 
-	        DataFrame MOIdf = sqlContext.createDataFrame(moiCache, MOIschema.class);
-	        MOIdf.show();
-	        MOIdf.save(moiCacheLoc+"/moiCache.parquet", SaveMode.Append);
+	        DataFrame SOMdf = sqlContext.createDataFrame(SOMCache, SOMschema.class);
+	        SOMdf.show();
+	        SOMdf.save(somCacheLoc+"/somCache.parquet", SaveMode.Append);
 	  }
 
-	  public static class MOIschema implements Serializable{
+	  public static class SOMschema implements Serializable{
 		  private int frameNo;
 		  private double minx;
 		  private double miny;
@@ -86,9 +84,7 @@ public class MoiCache {
 		  private double maxx;
 		  private double maxy;
 		  private double maxz;
-		  private double MOIx;
-		  private double MOIy;
-		  private double MOIz;		  
+		  private double SOM;		  
 		
 		public int getFrameNo() {
 			return frameNo;
@@ -96,23 +92,11 @@ public class MoiCache {
 		public void setFrameNo(int frameNo) {
 			this.frameNo = frameNo;
 		}
-		public double getMOIz() {
-			return MOIz;
+		public double getSOM() {
+			return SOM;
 		}
-		public void setMOIz(double mOIz) {
-			MOIz = mOIz;
-		}
-		public double getMOIy() {
-			return MOIy;
-		}
-		public void setMOIy(double mOIy) {
-			MOIy = mOIy;
-		}
-		public double getMOIx() {
-			return MOIx;
-		}
-		public void setMOIx(double mOIx) {
-			MOIx = mOIx;
+		public void setSOM(double SOM) {
+			this.SOM = SOM;
 		}
 		public double getMaxz() {
 			return maxz;

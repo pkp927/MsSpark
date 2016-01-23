@@ -101,6 +101,11 @@ public class SelectedAtomsRDD implements Serializable, FileFormat{
 		pos = sc.broadcast(FileFormat.POS_VEC_INDEX);
 	}
 	
+	// function to repartition the RDD
+	public void rePartition(Integer partitions) {
+		this.selection = this.selection.repartition(partitions);
+	}
+	
 	// setter of RDD
 	public void setSelectedAtomsRDD(JavaPairRDD<Integer, Double[]> s){
 		this.selection = s;

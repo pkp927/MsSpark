@@ -13,20 +13,17 @@ import pk.edu.msspark.utils.SelectParameters;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-public class MoiCache {
+public class DmCache {
 	
-	  public static SelectParameters checkMOIcache(SQLContext sqlContext, String moiCacheLoc, SelectParameters param){
-		  File f = new File(moiCacheLoc+"/moiCache.parquet");
-		  if(!f.exists()){param.cached = false; return param;}  
-		  DataFrame parquetFile = sqlContext.read().parquet(moiCacheLoc+"/moiCache.parquet");
+	  public static SelectParameters checkDMcache(SQLContext sqlContext, String dmCacheLoc, SelectParameters param){
+		    File f = new File(dmCacheLoc+"/dmCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;}   
+		    DataFrame parquetFile = sqlContext.read().parquet(dmCacheLoc+"/dmCache.parquet");
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
 
 	    	String query = "SELECT DISTINCT * FROM parquetFile "
 					+ "WHERE frameNo >= "+param.firstFrame+" AND frameNo <= "+param.lastFrame;
-	    	if(!param.skip.isEmpty()){
-	    		query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
-	    	}
 
 	    	if(!param.skip.isEmpty()) query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
 	    	if(param.minBound != null) query = query + " AND minx="+param.minBound.x+" AND miny="+param.minBound.y+ " AND minz="+param.minBound.z;
@@ -43,15 +40,15 @@ public class MoiCache {
 	    	return param;
 	  }
 
-	  public static void cacheMOIresult(SQLContext sqlContext, VectorRDD MOI, String moiCacheLoc, SelectParameters param){
+	  public static void cacheDMresult(SQLContext sqlContext, VectorRDD DM, String dmCacheLoc, SelectParameters param){
 		    final Vector3D minB = param.minBound; 
 	        final Vector3D maxB = param.maxBound; 
 	        
-	        JavaRDD<MOIschema> moiCache = MOI.getVectorRDD().map(
-	        		new Function<Tuple2<Integer, Vector3D>, MOIschema>(){
+	        JavaRDD<DMschema> moiCache = DM.getVectorRDD().map(
+	        		new Function<Tuple2<Integer, Vector3D>, DMschema>(){
 
-	    				public MOIschema call(Tuple2<Integer, Vector3D> t) throws Exception {
-	    					MOIschema ms = new MOIschema();
+	    				public DMschema call(Tuple2<Integer, Vector3D> t) throws Exception {
+	    					DMschema ms = new DMschema();
 	    					ms.setFrameNo(t._1);
 	    					
 	    					if(minB != null){
@@ -65,20 +62,20 @@ public class MoiCache {
 	     						ms.setMaxz(maxB.z);
 	    					}
 	    					
-	    					ms.setMOIx(t._2().x);
-	    					ms.setMOIy(t._2().y);
-	    					ms.setMOIz(t._2().z);
+	    					ms.setDMx(t._2().x);
+	    					ms.setDMy(t._2().y);
+	    					ms.setDMz(t._2().z);
 	    					return ms;
 	    				}
 	        			
 	        		});
 
-	        DataFrame MOIdf = sqlContext.createDataFrame(moiCache, MOIschema.class);
-	        MOIdf.show();
-	        MOIdf.save(moiCacheLoc+"/moiCache.parquet", SaveMode.Append);
+	        DataFrame DMdf = sqlContext.createDataFrame(moiCache, DMschema.class);
+	        DMdf.show();
+	        DMdf.save(dmCacheLoc+"/dmCache.parquet", SaveMode.Append);
 	  }
 
-	  public static class MOIschema implements Serializable{
+	  public static class DMschema implements Serializable{
 		  private int frameNo;
 		  private double minx;
 		  private double miny;
@@ -86,9 +83,9 @@ public class MoiCache {
 		  private double maxx;
 		  private double maxy;
 		  private double maxz;
-		  private double MOIx;
-		  private double MOIy;
-		  private double MOIz;		  
+		  private double DMx;
+		  private double DMy;
+		  private double DMz;		  
 		
 		public int getFrameNo() {
 			return frameNo;
@@ -96,23 +93,23 @@ public class MoiCache {
 		public void setFrameNo(int frameNo) {
 			this.frameNo = frameNo;
 		}
-		public double getMOIz() {
-			return MOIz;
+		public double getDMz() {
+			return DMz;
 		}
-		public void setMOIz(double mOIz) {
-			MOIz = mOIz;
+		public void setDMz(double mOIz) {
+			DMz = mOIz;
 		}
-		public double getMOIy() {
-			return MOIy;
+		public double getDMy() {
+			return DMy;
 		}
-		public void setMOIy(double mOIy) {
-			MOIy = mOIy;
+		public void setDMy(double mOIy) {
+			DMy = mOIy;
 		}
-		public double getMOIx() {
-			return MOIx;
+		public double getDMx() {
+			return DMx;
 		}
-		public void setMOIx(double mOIx) {
-			MOIx = mOIx;
+		public void setDMx(double mOIx) {
+			DMx = mOIx;
 		}
 		public double getMaxz() {
 			return maxz;

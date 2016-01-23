@@ -14,5 +14,6 @@ public class SelectParameters {
 	public String atomType;
 	public String atomId;
 	public Boolean cached = true;
+	public String axis;
 	
 }

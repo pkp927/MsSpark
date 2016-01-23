@@ -13,20 +13,17 @@ import pk.edu.msspark.utils.SelectParameters;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-public class MoiCache {
+public class ComCache {
 	
-	  public static SelectParameters checkMOIcache(SQLContext sqlContext, String moiCacheLoc, SelectParameters param){
-		  File f = new File(moiCacheLoc+"/moiCache.parquet");
-		  if(!f.exists()){param.cached = false; return param;}  
-		  DataFrame parquetFile = sqlContext.read().parquet(moiCacheLoc+"/moiCache.parquet");
+	  public static SelectParameters checkCOMcache(SQLContext sqlContext, String comCacheLoc, SelectParameters param){
+		    File f = new File(comCacheLoc+"/comCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;} 
+		  	DataFrame parquetFile = sqlContext.read().parquet(comCacheLoc+"/comCache.parquet");
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
-
+	    	
 	    	String query = "SELECT DISTINCT * FROM parquetFile "
 					+ "WHERE frameNo >= "+param.firstFrame+" AND frameNo <= "+param.lastFrame;
-	    	if(!param.skip.isEmpty()){
-	    		query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
-	    	}
 
 	    	if(!param.skip.isEmpty()) query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
 	    	if(param.minBound != null) query = query + " AND minx="+param.minBound.x+" AND miny="+param.minBound.y+ " AND minz="+param.minBound.z;
@@ -43,15 +40,15 @@ public class MoiCache {
 	    	return param;
 	  }
 
-	  public static void cacheMOIresult(SQLContext sqlContext, VectorRDD MOI, String moiCacheLoc, SelectParameters param){
+	  public static void cacheCOMresult(SQLContext sqlContext, VectorRDD COM, String comCacheLoc, SelectParameters param){
 		    final Vector3D minB = param.minBound; 
 	        final Vector3D maxB = param.maxBound; 
 	        
-	        JavaRDD<MOIschema> moiCache = MOI.getVectorRDD().map(
-	        		new Function<Tuple2<Integer, Vector3D>, MOIschema>(){
+	        JavaRDD<COMschema> moiCache = COM.getVectorRDD().map(
+	        		new Function<Tuple2<Integer, Vector3D>, COMschema>(){
 
-	    				public MOIschema call(Tuple2<Integer, Vector3D> t) throws Exception {
-	    					MOIschema ms = new MOIschema();
+	    				public COMschema call(Tuple2<Integer, Vector3D> t) throws Exception {
+	    					COMschema ms = new COMschema();
 	    					ms.setFrameNo(t._1);
 	    					
 	    					if(minB != null){
@@ -65,20 +62,20 @@ public class MoiCache {
 	     						ms.setMaxz(maxB.z);
 	    					}
 	    					
-	    					ms.setMOIx(t._2().x);
-	    					ms.setMOIy(t._2().y);
-	    					ms.setMOIz(t._2().z);
+	    					ms.setCOMx(t._2().x);
+	    					ms.setCOMy(t._2().y);
+	    					ms.setCOMz(t._2().z);
 	    					return ms;
 	    				}
 	        			
 	        		});
 
-	        DataFrame MOIdf = sqlContext.createDataFrame(moiCache, MOIschema.class);
-	        MOIdf.show();
-	        MOIdf.save(moiCacheLoc+"/moiCache.parquet", SaveMode.Append);
+	        DataFrame COMdf = sqlContext.createDataFrame(moiCache, COMschema.class);
+	        COMdf.show();
+	        COMdf.save(comCacheLoc+"/comCache.parquet", SaveMode.Append);
 	  }
 
-	  public static class MOIschema implements Serializable{
+	  public static class COMschema implements Serializable{
 		  private int frameNo;
 		  private double minx;
 		  private double miny;
@@ -86,9 +83,9 @@ public class MoiCache {
 		  private double maxx;
 		  private double maxy;
 		  private double maxz;
-		  private double MOIx;
-		  private double MOIy;
-		  private double MOIz;		  
+		  private double COMx;
+		  private double COMy;
+		  private double COMz;		  
 		
 		public int getFrameNo() {
 			return frameNo;
@@ -96,23 +93,23 @@ public class MoiCache {
 		public void setFrameNo(int frameNo) {
 			this.frameNo = frameNo;
 		}
-		public double getMOIz() {
-			return MOIz;
+		public double getCOMz() {
+			return COMz;
 		}
-		public void setMOIz(double mOIz) {
-			MOIz = mOIz;
+		public void setCOMz(double mOIz) {
+			COMz = mOIz;
 		}
-		public double getMOIy() {
-			return MOIy;
+		public double getCOMy() {
+			return COMy;
 		}
-		public void setMOIy(double mOIy) {
-			MOIy = mOIy;
+		public void setCOMy(double mOIy) {
+			COMy = mOIy;
 		}
-		public double getMOIx() {
-			return MOIx;
+		public double getCOMx() {
+			return COMx;
 		}
-		public void setMOIx(double mOIx) {
-			MOIx = mOIx;
+		public void setCOMx(double mOIx) {
+			COMx = mOIx;
 		}
 		public double getMaxz() {
 			return maxz;

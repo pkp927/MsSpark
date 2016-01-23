@@ -30,7 +30,13 @@ public class Vector3D implements Serializable{
 	public void printValues(){
 		System.out.print("x: "+x+"y: "+y+"z: "+z);
 	}
-
+	
+	// check if its zero
+	public Boolean isZero(){
+		if(this.x == 0 && this.y == 0 & this.z == 0) return true;
+		return false;
+	}
+	
     // convert vector to string representation
 	public String toString(){
 		return (Double.toString(x)+" "+Double.toString(y)+" "+Double.toString(z)); 
