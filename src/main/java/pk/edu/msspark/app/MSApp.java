@@ -4,12 +4,14 @@ package pk.edu.msspark.app;
 import org.apache.spark.api.java.*;
 
 import java.io.File;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Scanner;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.sql.SQLContext;
 
-import pk.edu.msspark.query.OneBodyQuery;
+import pk.edu.msspark.query.MSQuery;
 import pk.edu.msspark.resultRDD.*;
 import pk.edu.msspark.selectionRDD.FrameAtomsRDD;
 import pk.edu.msspark.selectionRDD.SelectedAtomsRDD;
@@ -26,10 +28,11 @@ enum Query{
 	COM,
 	ROG,
 	DM,
-	SOM
+	SOM,
+	SDH
 }
 
-public class MSApp {
+public class MSApp{
 	
 	  public static void main(String[] args) {
 
@@ -72,7 +75,7 @@ public class MSApp {
 	    while(true){
 		    // get the selection parameters
 		    param = getSelectParameters(param);
-		    
+		
 		    // ask for query
 		    System.out.println("Enter the query(moi/som/com/dm/rog):");
 			query = reader.nextLine();
@@ -98,7 +101,7 @@ public class MSApp {
 			    	if(r.equals("y")){
 			    		break;
 			    	}else{
-			    		System.out.println("Enter the query(moi/som/com/dm/rog):");
+			    		System.out.println("Enter the query(moi/som/com/dm/rog/sdh):");
 						query = reader.nextLine();
 			    	}
 
@@ -112,6 +115,7 @@ public class MSApp {
 				    }
 			    }
 		    }
+		    
 		    // check for finish
 	    	System.out.println("Are u done?(n/y):");
 	    	String r = reader.nextLine();
@@ -126,7 +130,7 @@ public class MSApp {
 			  String query, SelectParameters param, SQLContext sqlContext, String cacheLoc){
 
 	      // define query variable
-		  OneBodyQuery q = new OneBodyQuery(sc);
+		  MSQuery q = new MSQuery(sc);
 		  
 		  Query qr = Query.valueOf(query.toUpperCase());
 		  switch(qr){
@@ -156,6 +160,33 @@ public class MSApp {
 		      DM.getVectorRDD().foreach(new PrintVecTuple());
 		      DmCache.cacheDMresult(sqlContext, DM, cacheLoc, param);
 			  break;
+		  case SDH:
+			  int[] sk = new int[0];
+			    if(!param.skip.isEmpty()){
+					String[] splitted = param.skip.split("\\s+");
+					sk = new int[splitted.length];
+					for(int i=0; i<splitted.length; i++){
+						sk[i] = Integer.parseInt(splitted[i]);
+					}
+			    }
+				int[] frames = new int[param.lastFrame - param.firstFrame + 1 - sk.length];
+				int j=0; boolean p = false;
+				for(int i=param.firstFrame;i<=param.lastFrame;i++){
+					for(int k=0;k<sk.length;k++){
+						if(i == sk[k]){
+							p = true;
+							break;
+						}
+					}
+					if(!p){
+						frames[j] = i;
+						j++;
+					}
+				}
+			    HistogramRDD SDH = q.getSDH(selData, frames, param.bw);
+			    SDH.getHistogramRDD().foreach(new PrintTuple());
+			    SDHCache.cacheSDHresult(sqlContext, SDH, cacheLoc, param);
+			    break;
 		  }
 	  }
 	  
@@ -179,6 +210,12 @@ public class MSApp {
 			  break;
 		  case DM:
 			  param = DmCache.checkDMcache(sqlContext, cacheLoc, param);
+			  break;
+		  case SDH:
+			  Scanner read = new Scanner(System.in);
+			  System.out.println("Enter the bin width:");
+			  param.bw = Integer.parseInt(read.nextLine());
+			  param = SDHCache.checkSDHcache(sqlContext, cacheLoc, param);
 			  break;
 		  }
 		  return param;
@@ -220,14 +257,37 @@ public class MSApp {
 
 }
 
-class PrintTuple implements VoidFunction<Tuple2<Integer, Double[]>>{
+class PrintTemp implements VoidFunction<Tuple2<Integer, ArrayList<Double>>>{
 
-	public void call(Tuple2<Integer, Double[]> t) throws Exception {
+	public void call(Tuple2<Integer, ArrayList<Double>> t) throws Exception {
 		System.out.print(t._1+" : ");
-		for(int i=0; i<t._2.length; i++){
-			System.out.print(t._2[i]+" ");
+		for(int i=0; i<t._2.size(); i++){
+			System.out.print(t._2.get(i)+" ");
 		}
 		System.out.println();
+	}
+	
+}
+
+class PrintSDH implements VoidFunction<Tuple2<Integer,Tuple2<double[], long[]>>>{
+
+	public void call(Tuple2<Integer, Tuple2<double[], long[]>> t) throws Exception {
+		System.out.print(t._1+" : ");
+		for(int i=0; i<t._2._1.length; i++){
+			System.out.print(t._2._1[i]+" : ");
+			for(int j=0; j<t._2._2.length; j++){
+				System.out.print(t._2._2[j]+" ");
+			}
+		}
+		System.out.println();
+	}
+	
+}
+
+class PrintTuple implements VoidFunction<Tuple2<Integer, String>>{
+
+	public void call(Tuple2<Integer, String> t) throws Exception {
+		System.out.println(t._1+" : "+t._2);
 	}
 	
 }
