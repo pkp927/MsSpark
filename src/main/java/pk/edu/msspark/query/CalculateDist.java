@@ -1,12 +1,11 @@
 package pk.edu.msspark.query;
 
-import java.io.Serializable;
-
 import org.apache.spark.api.java.function.Function;
-
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
+/* Class to calculate distance between two points for mapValues transformation
+ */
 class CalculateDist implements Function<Tuple2<Vector3D,Vector3D>,Double>{
 	
 	public Double euclideanDistance(Vector3D v1, Vector3D v2){

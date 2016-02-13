@@ -1,7 +1,12 @@
 package pk.edu.msspark.query;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
+import org.apache.hadoop.mapred.lib.HashPartitioner;
+import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -14,7 +19,7 @@ import pk.edu.msspark.selectionRDD.SelectedAtomsRDD;
 import pk.edu.msspark.utils.*;
 import scala.Tuple2;
 
-/* OneBodyQuery class implements one body queries
+/* MSQuery class implements MS queries
  * for Molecular Simulation data
  */
 
@@ -135,37 +140,32 @@ public class MSQuery{
 	/* Function to calculate SDH
 	 */
 	public HistogramRDD getSDH( FrameAtomsRDD f, int[] frames, int bw){		
-		JavaPairRDD<Integer, Vector3D> result = f.getFrameAtomsRDD()
+		Broadcast<Integer> binw = sc.broadcast(bw);
+		JavaPairRDD<Integer, Vector3D> res = f.getFrameAtomsRDD()
 				.mapValues(new ConvertToSDHVec(offset, pos));
-		result.cache();
-		Broadcast<Integer> frame;
-		JavaRDD<Vector3D> position;
-		JavaDoubleRDD dist;
-		Tuple2<double[], long[]> hist;
-		String h;
-		ArrayList<Tuple2<Integer,String>> output = new ArrayList<Tuple2<Integer,String>>();
-		for(int i=0;i<frames.length;i++){
-			frame = sc.broadcast(frames[i]);
-			position =result.
-					filter(new GetFrame(frame)).values();
-			dist =	position.cartesian(position).map(new CalculateDist()).mapToDouble(new GetDouble());
-			hist = dist.histogram(bw);
-			//System.out.println("Frame no: "+frames[i]);
-			h = "";
-			for(int j=0;(j<hist._1.length)&&(j<hist._2.length);j++){
-				//System.out.println(hist._1[j]+" : "+hist._2[j]);
-				h = hist._1[j]+" : "+hist._2[j]+"\n";
-			}
-			output.add(new Tuple2(frames[i],h));
-		}
-		return new HistogramRDD(sc, output);
+		JavaPairRDD<Integer, Iterable<Vector3D>> result = res.groupByKey();
+		JavaPairRDD<Integer, String> hist = result.mapValues(new CalculateSDH(binw));
+		return new HistogramRDD(hist);
 	}
 	
 	/* Function to calculate SDH
 	 */
 	public HistogramRDD getSDH(SelectedAtomsRDD f, int[] frames, int bw){
-		JavaPairRDD<Integer, Vector3D> result = f.getSelectedAtomsRDD()
+		Broadcast<Integer> binw = sc.broadcast(bw);
+		JavaPairRDD<Integer, Vector3D> res = f.getSelectedAtomsRDD()
 				.mapValues(new ConvertToSDHVec(offset, pos));
+		JavaPairRDD<Integer, Iterable<Vector3D>> result = res.groupByKey();
+		JavaPairRDD<Integer, String> hist = result.mapValues(new CalculateSDH(binw));
+		return new HistogramRDD(hist);
+		
+		/*result.foreachPartition(new CalculateSDHdist(acc, binw));
+		Map<Integer, String> mp = acc.value();
+		Iterator it = mp.entrySet().iterator();
+	    while (it.hasNext()) {
+	        Map.Entry pair = (Map.Entry)it.next();
+	        System.out.println(pair.getKey() + " = " + pair.getValue());
+	    }*/
+		/*
 		result.cache();
 		Broadcast<Integer> frame;
 		JavaRDD<Vector3D> position;
@@ -188,7 +188,7 @@ public class MSQuery{
 			output.add(new Tuple2<Integer,String>(frames[i],h));
 		}
 		return new HistogramRDD(sc, output);
-		//return null;
+		*/
 	}
 	
 	

@@ -77,7 +77,7 @@ public class MSApp{
 		    param = getSelectParameters(param);
 		
 		    // ask for query
-		    System.out.println("Enter the query(moi/som/com/dm/rog):");
+		    System.out.println("Enter the query(moi/som/com/dm/rog/sdh):");
 			query = reader.nextLine();
 			
 			// check cache
@@ -87,9 +87,9 @@ public class MSApp{
 		    if(!param.cached){
 			    // get desired data
 			    selData = new SelectedAtomsRDD(sc, distData, param);
-			    selData.rePartition(param.lastFrame - param.lastFrame + 1);
+			    //selData = selData.rePartition(param.lastFrame - param.lastFrame + 1);
 			    selData.getSelectedAtomsRDD().cache();
-
+			    
 		    	// execute the query and cache the result
 		    	executeQueryAndCache(sc,selData,query,param,sqlContext,cacheLoc);
 		    	
@@ -172,6 +172,7 @@ public class MSApp{
 				int[] frames = new int[param.lastFrame - param.firstFrame + 1 - sk.length];
 				int j=0; boolean p = false;
 				for(int i=param.firstFrame;i<=param.lastFrame;i++){
+					p = false;
 					for(int k=0;k<sk.length;k++){
 						if(i == sk[k]){
 							p = true;
@@ -180,6 +181,7 @@ public class MSApp{
 					}
 					if(!p){
 						frames[j] = i;
+						System.out.println(i);
 						j++;
 					}
 				}

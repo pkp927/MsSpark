@@ -34,7 +34,7 @@ public class DmCache {
 	    	result = sqlContext.sql(query);
 	    	result.show();
 	    	long n1 = result.count();
-	    	long n2 = param.lastFrame - param.firstFrame - param.skip.split("\\s+").length;
+	    	long n2 = param.lastFrame - param.firstFrame - param.skip.split("\\s+").length+1;
 	    	if(n1<n2) param.cached = false;
 	    	else param.cached = true;
 	    	return param;

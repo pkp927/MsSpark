@@ -2,9 +2,10 @@ package pk.edu.msspark.query;
 
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.broadcast.Broadcast;
-
 import pk.edu.msspark.utils.Vector3D;
 
+/* Class to extract DM required attributes for mapValues transformation
+ */
 public class ConvertToDMVec implements Function<Double[], Vector3D>{
 
 	// file format 

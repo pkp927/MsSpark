@@ -2,8 +2,8 @@ package pk.edu.msspark.query;
 
 import org.apache.spark.api.java.function.Function2;
 
-import pk.edu.msspark.utils.Vector3D;
-
+/* Class to add two array values of pairRDD for reduceByKey transformation
+ */
 public class AddArray implements Function2<Double[], Double[], Double[]>{
 
 	public Double[] call(Double[] d1, Double[] d2) throws Exception {

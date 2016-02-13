@@ -3,8 +3,8 @@ package pk.edu.msspark.query;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.broadcast.Broadcast;
 
-import pk.edu.msspark.utils.Vector3D;
-
+/* Class to extract ROG required attributes for mapValues transformation
+ */
 public class ConvertToRogArray implements Function<Double[], Double[]>{
 
 	// file format 
