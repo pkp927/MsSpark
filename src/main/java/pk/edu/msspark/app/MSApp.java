@@ -3,6 +3,8 @@ package pk.edu.msspark.app;
 
 import org.apache.spark.api.java.*;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -36,6 +38,9 @@ public class MSApp{
 	
 	  public static void main(String[] args) {
 
+	    Logger.getLogger("org").setLevel(Level.OFF);
+	    Logger.getLogger("akka").setLevel(Level.OFF);
+
 	    // create SparkContext object to access clusters
 	    SparkConf conf = new SparkConf().setAppName("Simple Application");
 	    JavaSparkContext sc = new JavaSparkContext(conf);
@@ -43,9 +48,9 @@ public class MSApp{
 
 	    // specify input and output location of files
 	    //String inputLoc = "hdfs://localhost:54310/example/data.txt";
-	    String inputLoc = "s3n://usf/mssparkdata/data.txt";
-	    String outputLoc = "s3n://usf/mssparkdata/output";
-	    String cacheLoc = "s3n://usf/mssparkdata/cache";
+	    String inputLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/data.txt";
+	    String outputLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/output";
+	    String cacheLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/cache";
 	    //String inputLoc = "/home/parneet/thesis/files/data.txt";
 	    //String outputLoc = "/home/parneet/thesis/files/output";
 	    //String cacheLoc = "/home/parneet/thesis/files/cache";
