@@ -42,11 +42,13 @@ public class MSApp{
 	    SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
 
 	    // specify input and output location of files
-		//String inputLoc = "hdfs://localhost:54310/example/data.txt";
-	    //String outputLoc = "hdfs://localhost:54310/example/output";
-	    String inputLoc = "/home/simi/Desktop/thesis/data.txt";
-	    String outputLoc = "/home/simi/spark-1.5.1/abc/output";
-	    String cacheLoc = "/home/simi/spark-1.5.1/abc/cache";
+	    //String inputLoc = "hdfs://localhost:54310/example/data.txt";
+	    String inputLoc = "s3n://usf/mssparkdata/data.txt";
+	    String outputLoc = "s3n://usf/mssparkdata/output";
+	    String cacheLoc = "s3n://usf/mssparkdata/cache";
+	    //String inputLoc = "/home/parneet/thesis/files/data.txt";
+	    //String outputLoc = "/home/parneet/thesis/files/output";
+	    //String cacheLoc = "/home/parneet/thesis/files/cache";
 	    
 	    File f = new File(outputLoc);
 	    if(f.exists()){
