@@ -89,6 +89,7 @@ public class MSApp{
 			
 			// check cache
 		    param = checkCache(sqlContext, cacheLoc, param, query);
+		    System.out.println("Cache found:"+param+"\n");
 		    
 	    	// if not cached
 		    if(!param.cached){
