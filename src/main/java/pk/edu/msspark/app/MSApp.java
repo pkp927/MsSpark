@@ -48,13 +48,16 @@ public class MSApp{
 
 	    // specify input and output location of files
 	    //String inputLoc = "hdfs://localhost:54310/example/data.txt";
-	    String inputLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/data.txt";
-	    String outputLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/output";
-	    String cacheLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/cache";
+	    //String inputLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/data.txt";
+	    //String outputLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/output";
+	    //String cacheLoc = "s3n://AKIAJSEVIOZ7AWGZVS3Q:c8YhqrH5+b82OTFefsmWcrE2GmXkykXrGQBQBBOL@mssparkdata/cache";
 	    //String inputLoc = "/home/parneet/thesis/files/data.txt";
 	    //String outputLoc = "/home/parneet/thesis/files/output";
 	    //String cacheLoc = "/home/parneet/thesis/files/cache";
-	    
+	    String inputLoc = "/root/data.txt";
+	    String outputLoc = "/root/output";
+	    String cacheLoc = "/root/cache";
+
 	    File f = new File(outputLoc);
 	    if(f.exists()){
 		    String[] entries = f.list();
