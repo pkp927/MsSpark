@@ -8,29 +8,30 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SaveMode;
-import pk.edu.msspark.resultRDD.VectorRDD;
+import pk.edu.msspark.resultRDD.ScalarRDD;
 import pk.edu.msspark.utils.SelectParameters;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-public class ComCache {
+public class RogCache {
 	
-	  public static SelectParameters checkCOMcache(SQLContext sqlContext, String comCacheLoc, SelectParameters param){
-		    //File f = new File(comCacheLoc+"/comCache.parquet");
-		  	//if(!f.exists()){param.cached = false; return param;} 
-		  	DataFrame parquetFile = sqlContext.read().parquet(comCacheLoc+"/comCache.parquet");
-		if(parquetFile==null){param.cached = false; return param;} 
+	  public static SelectParameters checkROGcache(SQLContext sqlContext, String rogCacheLoc, SelectParameters param){
+		  	File f = new File(rogCacheLoc+"/rogCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;} 
+		    DataFrame parquetFile = sqlContext.read().parquet(rogCacheLoc+"/rogCache.parquet");
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
-	    	
+
 	    	String query = "SELECT DISTINCT * FROM parquetFile "
 					+ "WHERE frameNo >= "+param.firstFrame+" AND frameNo <= "+param.lastFrame;
-
+	    	
 	    	if(!param.skip.isEmpty()) query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
 	    	if(param.minBound != null) query = query + " AND minx="+param.minBound.x+" AND miny="+param.minBound.y+ " AND minz="+param.minBound.z;
 	    	else query = query + " AND minx=0 AND miny=0 AND minz=0";	    	 
 	    	if(param.maxBound != null) query = query + " AND maxx="+param.maxBound.x+" AND maxy="+param.maxBound.y+ " AND maxz="+param.maxBound.z;
 	    	else query = query + " AND maxx=0 AND maxy=0 AND maxz=0";
+	    	if(param.axis != null) query = query + " AND axis="+param.axis;
+		    else query = query + " AND axis=\"z\"";
 	    	
 	    	result = sqlContext.sql(query);
 	    	result.show();
@@ -41,15 +42,16 @@ public class ComCache {
 	    	return param;
 	  }
 
-	  public static void cacheCOMresult(SQLContext sqlContext, VectorRDD COM, String comCacheLoc, SelectParameters param){
+	  public static void cacheROGresult(SQLContext sqlContext, ScalarRDD ROG, String rogCacheLoc, SelectParameters param){
 		    final Vector3D minB = param.minBound; 
 	        final Vector3D maxB = param.maxBound; 
+	        final String axis = param.axis;
 	        
-	        JavaRDD<COMschema> moiCache = COM.getVectorRDD().map(
-	        		new Function<Tuple2<Integer, Vector3D>, COMschema>(){
+	        JavaRDD<ROGschema> ROGCache = ROG.getScalarRDD().map(
+	        		new Function<Tuple2<Integer, Double>, ROGschema>(){
 
-	    				public COMschema call(Tuple2<Integer, Vector3D> t) throws Exception {
-	    					COMschema ms = new COMschema();
+	    				public ROGschema call(Tuple2<Integer, Double> t) throws Exception {
+	    					ROGschema ms = new ROGschema();
 	    					ms.setFrameNo(t._1);
 	    					
 	    					if(minB != null){
@@ -63,20 +65,20 @@ public class ComCache {
 	     						ms.setMaxz(maxB.z);
 	    					}
 	    					
-	    					ms.setCOMx(t._2().x);
-	    					ms.setCOMy(t._2().y);
-	    					ms.setCOMz(t._2().z);
+	    					ms.setROG(t._2());
+	    					ms.setAxis(axis);
+	    					
 	    					return ms;
 	    				}
 	        			
 	        		});
 
-	        DataFrame COMdf = sqlContext.createDataFrame(moiCache, COMschema.class);
-	        COMdf.show((int)COMdf.count());
-	        COMdf.save(comCacheLoc+"/comCache.parquet", SaveMode.Append);
+	        DataFrame ROGdf = sqlContext.createDataFrame(ROGCache, ROGschema.class);
+	        ROGdf.show((int)ROGdf.count());
+	        ROGdf.save(rogCacheLoc+"/rogCache.parquet", SaveMode.Append);
 	  }
 
-	  public static class COMschema implements Serializable{
+	  public static class ROGschema implements Serializable{
 		  private int frameNo;
 		  private double minx;
 		  private double miny;
@@ -84,9 +86,8 @@ public class ComCache {
 		  private double maxx;
 		  private double maxy;
 		  private double maxz;
-		  private double COMx;
-		  private double COMy;
-		  private double COMz;		  
+		  private double ROG;	
+		  private String axis;
 		
 		public int getFrameNo() {
 			return frameNo;
@@ -94,23 +95,11 @@ public class ComCache {
 		public void setFrameNo(int frameNo) {
 			this.frameNo = frameNo;
 		}
-		public double getCOMz() {
-			return COMz;
+		public double getROG() {
+			return ROG;
 		}
-		public void setCOMz(double mOIz) {
-			COMz = mOIz;
-		}
-		public double getCOMy() {
-			return COMy;
-		}
-		public void setCOMy(double mOIy) {
-			COMy = mOIy;
-		}
-		public double getCOMx() {
-			return COMx;
-		}
-		public void setCOMx(double mOIx) {
-			COMx = mOIx;
+		public void setROG(double ROG) {
+			this.ROG = ROG;
 		}
 		public double getMaxz() {
 			return maxz;
@@ -147,6 +136,12 @@ public class ComCache {
 		}
 		public void setMinx(double minx) {
 			this.minx = minx;
+		}
+		public String getAxis() {
+			return axis;
+		}
+		public void setAxis(String axis) {
+			this.axis = axis;
 		}
 	  }
 

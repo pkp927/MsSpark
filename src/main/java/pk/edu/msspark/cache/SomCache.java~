@@ -8,23 +8,25 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SaveMode;
-import pk.edu.msspark.resultRDD.VectorRDD;
+import pk.edu.msspark.resultRDD.ScalarRDD;
 import pk.edu.msspark.utils.SelectParameters;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-public class ComCache {
+public class SomCache {
 	
-	  public static SelectParameters checkCOMcache(SQLContext sqlContext, String comCacheLoc, SelectParameters param){
-		    //File f = new File(comCacheLoc+"/comCache.parquet");
-		  	//if(!f.exists()){param.cached = false; return param;} 
-		  	DataFrame parquetFile = sqlContext.read().parquet(comCacheLoc+"/comCache.parquet");
-		if(parquetFile==null){param.cached = false; return param;} 
+	  public static SelectParameters checkSOMcache(SQLContext sqlContext, String somCacheLoc, SelectParameters param){
+		    File f = new File(somCacheLoc+"/somCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;} 
+		  	DataFrame parquetFile = sqlContext.read().parquet(somCacheLoc+"/somCache.parquet");
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
-	    	
+
 	    	String query = "SELECT DISTINCT * FROM parquetFile "
 					+ "WHERE frameNo >= "+param.firstFrame+" AND frameNo <= "+param.lastFrame;
+	    	if(!param.skip.isEmpty()){
+	    		query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
+	    	}
 
 	    	if(!param.skip.isEmpty()) query = query + " AND frameNo NOT IN ( "+param.skip.trim().replace(" ", " , ")+" )";
 	    	if(param.minBound != null) query = query + " AND minx="+param.minBound.x+" AND miny="+param.minBound.y+ " AND minz="+param.minBound.z;
@@ -41,15 +43,15 @@ public class ComCache {
 	    	return param;
 	  }
 
-	  public static void cacheCOMresult(SQLContext sqlContext, VectorRDD COM, String comCacheLoc, SelectParameters param){
+	  public static void cacheSOMresult(SQLContext sqlContext, ScalarRDD SOM, String somCacheLoc, SelectParameters param){
 		    final Vector3D minB = param.minBound; 
 	        final Vector3D maxB = param.maxBound; 
 	        
-	        JavaRDD<COMschema> moiCache = COM.getVectorRDD().map(
-	        		new Function<Tuple2<Integer, Vector3D>, COMschema>(){
+	        JavaRDD<SOMschema> SOMCache = SOM.getScalarRDD().map(
+	        		new Function<Tuple2<Integer, Double>, SOMschema>(){
 
-	    				public COMschema call(Tuple2<Integer, Vector3D> t) throws Exception {
-	    					COMschema ms = new COMschema();
+	    				public SOMschema call(Tuple2<Integer, Double> t) throws Exception {
+	    					SOMschema ms = new SOMschema();
 	    					ms.setFrameNo(t._1);
 	    					
 	    					if(minB != null){
@@ -63,20 +65,18 @@ public class ComCache {
 	     						ms.setMaxz(maxB.z);
 	    					}
 	    					
-	    					ms.setCOMx(t._2().x);
-	    					ms.setCOMy(t._2().y);
-	    					ms.setCOMz(t._2().z);
+	    					ms.setSOM(t._2());
 	    					return ms;
 	    				}
 	        			
 	        		});
 
-	        DataFrame COMdf = sqlContext.createDataFrame(moiCache, COMschema.class);
-	        COMdf.show((int)COMdf.count());
-	        COMdf.save(comCacheLoc+"/comCache.parquet", SaveMode.Append);
+	        DataFrame SOMdf = sqlContext.createDataFrame(SOMCache, SOMschema.class);
+	        SOMdf.show((int)SOMdf.count());
+	        SOMdf.save(somCacheLoc+"/somCache.parquet", SaveMode.Append);
 	  }
 
-	  public static class COMschema implements Serializable{
+	  public static class SOMschema implements Serializable{
 		  private int frameNo;
 		  private double minx;
 		  private double miny;
@@ -84,9 +84,7 @@ public class ComCache {
 		  private double maxx;
 		  private double maxy;
 		  private double maxz;
-		  private double COMx;
-		  private double COMy;
-		  private double COMz;		  
+		  private double SOM;		  
 		
 		public int getFrameNo() {
 			return frameNo;
@@ -94,23 +92,11 @@ public class ComCache {
 		public void setFrameNo(int frameNo) {
 			this.frameNo = frameNo;
 		}
-		public double getCOMz() {
-			return COMz;
+		public double getSOM() {
+			return SOM;
 		}
-		public void setCOMz(double mOIz) {
-			COMz = mOIz;
-		}
-		public double getCOMy() {
-			return COMy;
-		}
-		public void setCOMy(double mOIy) {
-			COMy = mOIy;
-		}
-		public double getCOMx() {
-			return COMx;
-		}
-		public void setCOMx(double mOIx) {
-			COMx = mOIx;
+		public void setSOM(double SOM) {
+			this.SOM = SOM;
 		}
 		public double getMaxz() {
 			return maxz;

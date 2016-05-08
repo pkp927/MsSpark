@@ -16,9 +16,10 @@ import scala.Tuple2;
 public class SomCache {
 	
 	  public static SelectParameters checkSOMcache(SQLContext sqlContext, String somCacheLoc, SelectParameters param){
-		    File f = new File(somCacheLoc+"/somCache.parquet");
-		  	if(!f.exists()){param.cached = false; return param;} 
+		    //File f = new File(somCacheLoc+"/somCache.parquet");
+		  	//if(!f.exists()){param.cached = false; return param;} 
 		  	DataFrame parquetFile = sqlContext.read().parquet(somCacheLoc+"/somCache.parquet");
+		if(parquetFile==null){param.cached = false; return param;} 
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
 

@@ -13,16 +13,15 @@ import pk.edu.msspark.utils.SelectParameters;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-public class ComCache {
+public class DmCache {
 	
-	  public static SelectParameters checkCOMcache(SQLContext sqlContext, String comCacheLoc, SelectParameters param){
-		    //File f = new File(comCacheLoc+"/comCache.parquet");
-		  	//if(!f.exists()){param.cached = false; return param;} 
-		  	DataFrame parquetFile = sqlContext.read().parquet(comCacheLoc+"/comCache.parquet");
-		if(parquetFile==null){param.cached = false; return param;} 
+	  public static SelectParameters checkDMcache(SQLContext sqlContext, String dmCacheLoc, SelectParameters param){
+		    File f = new File(dmCacheLoc+"/dmCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;}   
+		    DataFrame parquetFile = sqlContext.read().parquet(dmCacheLoc+"/dmCache.parquet");
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
-	    	
+
 	    	String query = "SELECT DISTINCT * FROM parquetFile "
 					+ "WHERE frameNo >= "+param.firstFrame+" AND frameNo <= "+param.lastFrame;
 
@@ -41,15 +40,15 @@ public class ComCache {
 	    	return param;
 	  }
 
-	  public static void cacheCOMresult(SQLContext sqlContext, VectorRDD COM, String comCacheLoc, SelectParameters param){
+	  public static void cacheDMresult(SQLContext sqlContext, VectorRDD DM, String dmCacheLoc, SelectParameters param){
 		    final Vector3D minB = param.minBound; 
 	        final Vector3D maxB = param.maxBound; 
 	        
-	        JavaRDD<COMschema> moiCache = COM.getVectorRDD().map(
-	        		new Function<Tuple2<Integer, Vector3D>, COMschema>(){
+	        JavaRDD<DMschema> moiCache = DM.getVectorRDD().map(
+	        		new Function<Tuple2<Integer, Vector3D>, DMschema>(){
 
-	    				public COMschema call(Tuple2<Integer, Vector3D> t) throws Exception {
-	    					COMschema ms = new COMschema();
+	    				public DMschema call(Tuple2<Integer, Vector3D> t) throws Exception {
+	    					DMschema ms = new DMschema();
 	    					ms.setFrameNo(t._1);
 	    					
 	    					if(minB != null){
@@ -63,20 +62,20 @@ public class ComCache {
 	     						ms.setMaxz(maxB.z);
 	    					}
 	    					
-	    					ms.setCOMx(t._2().x);
-	    					ms.setCOMy(t._2().y);
-	    					ms.setCOMz(t._2().z);
+	    					ms.setDMx(t._2().x);
+	    					ms.setDMy(t._2().y);
+	    					ms.setDMz(t._2().z);
 	    					return ms;
 	    				}
 	        			
 	        		});
 
-	        DataFrame COMdf = sqlContext.createDataFrame(moiCache, COMschema.class);
-	        COMdf.show((int)COMdf.count());
-	        COMdf.save(comCacheLoc+"/comCache.parquet", SaveMode.Append);
+	        DataFrame DMdf = sqlContext.createDataFrame(moiCache, DMschema.class);
+	        DMdf.show((int)DMdf.count());
+	        DMdf.save(dmCacheLoc+"/dmCache.parquet", SaveMode.Append);
 	  }
 
-	  public static class COMschema implements Serializable{
+	  public static class DMschema implements Serializable{
 		  private int frameNo;
 		  private double minx;
 		  private double miny;
@@ -84,9 +83,9 @@ public class ComCache {
 		  private double maxx;
 		  private double maxy;
 		  private double maxz;
-		  private double COMx;
-		  private double COMy;
-		  private double COMz;		  
+		  private double DMx;
+		  private double DMy;
+		  private double DMz;		  
 		
 		public int getFrameNo() {
 			return frameNo;
@@ -94,23 +93,23 @@ public class ComCache {
 		public void setFrameNo(int frameNo) {
 			this.frameNo = frameNo;
 		}
-		public double getCOMz() {
-			return COMz;
+		public double getDMz() {
+			return DMz;
 		}
-		public void setCOMz(double mOIz) {
-			COMz = mOIz;
+		public void setDMz(double mOIz) {
+			DMz = mOIz;
 		}
-		public double getCOMy() {
-			return COMy;
+		public double getDMy() {
+			return DMy;
 		}
-		public void setCOMy(double mOIy) {
-			COMy = mOIy;
+		public void setDMy(double mOIy) {
+			DMy = mOIy;
 		}
-		public double getCOMx() {
-			return COMx;
+		public double getDMx() {
+			return DMx;
 		}
-		public void setCOMx(double mOIx) {
-			COMx = mOIx;
+		public void setDMx(double mOIx) {
+			DMx = mOIx;
 		}
 		public double getMaxz() {
 			return maxz;

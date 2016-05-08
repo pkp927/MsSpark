@@ -8,18 +8,19 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SaveMode;
+
+import pk.edu.msspark.resultRDD.HistogramRDD;
 import pk.edu.msspark.resultRDD.VectorRDD;
 import pk.edu.msspark.utils.SelectParameters;
 import pk.edu.msspark.utils.Vector3D;
 import scala.Tuple2;
 
-public class ComCache {
+public class SDHCache {
 	
-	  public static SelectParameters checkCOMcache(SQLContext sqlContext, String comCacheLoc, SelectParameters param){
-		    //File f = new File(comCacheLoc+"/comCache.parquet");
-		  	//if(!f.exists()){param.cached = false; return param;} 
-		  	DataFrame parquetFile = sqlContext.read().parquet(comCacheLoc+"/comCache.parquet");
-		if(parquetFile==null){param.cached = false; return param;} 
+	  public static SelectParameters checkSDHcache(SQLContext sqlContext, String sdhCacheLoc, SelectParameters param){
+		    File f = new File(sdhCacheLoc+"/sdhCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;} 
+		  	DataFrame parquetFile = sqlContext.read().parquet(sdhCacheLoc+"/sdhCache.parquet");
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
 	    	
@@ -31,6 +32,7 @@ public class ComCache {
 	    	else query = query + " AND minx=0 AND miny=0 AND minz=0";	    	 
 	    	if(param.maxBound != null) query = query + " AND maxx="+param.maxBound.x+" AND maxy="+param.maxBound.y+ " AND maxz="+param.maxBound.z;
 	    	else query = query + " AND maxx=0 AND maxy=0 AND maxz=0";
+	    	query = query + "AND bw="+param.bw;
 	    	
 	    	result = sqlContext.sql(query);
 	    	result.show();
@@ -41,15 +43,17 @@ public class ComCache {
 	    	return param;
 	  }
 
-	  public static void cacheCOMresult(SQLContext sqlContext, VectorRDD COM, String comCacheLoc, SelectParameters param){
+	  public static void cacheSDHresult(SQLContext sqlContext, HistogramRDD SDH,
+			  String sdhCacheLoc, SelectParameters param){
 		    final Vector3D minB = param.minBound; 
 	        final Vector3D maxB = param.maxBound; 
+	        final int bw = param.bw;
 	        
-	        JavaRDD<COMschema> moiCache = COM.getVectorRDD().map(
-	        		new Function<Tuple2<Integer, Vector3D>, COMschema>(){
+	        JavaRDD<SDHschema> moiCache = SDH.getHistogramRDD().map(
+	        		new Function<Tuple2<Integer, String>, SDHschema>(){
 
-	    				public COMschema call(Tuple2<Integer, Vector3D> t) throws Exception {
-	    					COMschema ms = new COMschema();
+	    				public SDHschema call(Tuple2<Integer, String> t) throws Exception {
+	    					SDHschema ms = new SDHschema();
 	    					ms.setFrameNo(t._1);
 	    					
 	    					if(minB != null){
@@ -63,20 +67,19 @@ public class ComCache {
 	     						ms.setMaxz(maxB.z);
 	    					}
 	    					
-	    					ms.setCOMx(t._2().x);
-	    					ms.setCOMy(t._2().y);
-	    					ms.setCOMz(t._2().z);
+	    					ms.setHist(t._2());
+	    					ms.setBw(bw);
 	    					return ms;
 	    				}
 	        			
 	        		});
 
-	        DataFrame COMdf = sqlContext.createDataFrame(moiCache, COMschema.class);
-	        COMdf.show((int)COMdf.count());
-	        COMdf.save(comCacheLoc+"/comCache.parquet", SaveMode.Append);
+	        DataFrame SDHdf = sqlContext.createDataFrame(moiCache, SDHschema.class);
+	        SDHdf.show((int)SDHdf.count());
+	        SDHdf.save(sdhCacheLoc+"/sdhCache.parquet", SaveMode.Append);
 	  }
 
-	  public static class COMschema implements Serializable{
+	  public static class SDHschema implements Serializable{
 		  private int frameNo;
 		  private double minx;
 		  private double miny;
@@ -84,33 +87,14 @@ public class ComCache {
 		  private double maxx;
 		  private double maxy;
 		  private double maxz;
-		  private double COMx;
-		  private double COMy;
-		  private double COMz;		  
+		  private int bw;
+		  private String hist;	  
 		
 		public int getFrameNo() {
 			return frameNo;
 		}
 		public void setFrameNo(int frameNo) {
 			this.frameNo = frameNo;
-		}
-		public double getCOMz() {
-			return COMz;
-		}
-		public void setCOMz(double mOIz) {
-			COMz = mOIz;
-		}
-		public double getCOMy() {
-			return COMy;
-		}
-		public void setCOMy(double mOIy) {
-			COMy = mOIy;
-		}
-		public double getCOMx() {
-			return COMx;
-		}
-		public void setCOMx(double mOIx) {
-			COMx = mOIx;
 		}
 		public double getMaxz() {
 			return maxz;
@@ -147,6 +131,18 @@ public class ComCache {
 		}
 		public void setMinx(double minx) {
 			this.minx = minx;
+		}
+		public String getHist() {
+			return hist;
+		}
+		public void setHist(String hist) {
+			this.hist = hist;
+		}
+		public int getBw() {
+			return bw;
+		}
+		public void setBw(int bw) {
+			this.bw = bw;
 		}
 	  }
 
