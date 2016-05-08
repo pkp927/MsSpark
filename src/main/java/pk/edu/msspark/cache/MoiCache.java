@@ -16,8 +16,8 @@ import scala.Tuple2;
 public class MoiCache {
 	
 	  public static SelectParameters checkMOIcache(SQLContext sqlContext, String moiCacheLoc, SelectParameters param){
-		  //File f = new File(moiCacheLoc+"/moiCache.parquet");
-		  //if(!f.exists()){param.cached = false; return param;}  
+		  File f = new File(moiCacheLoc+"/moiCache.parquet");
+		 if(!f.exists()){param.cached = false; return param;}  
 		  DataFrame parquetFile = sqlContext.read().parquet(moiCacheLoc+"/moiCache.parquet");
 		if(parquetFile==null){param.cached = false; return param;} 
 	    	parquetFile.registerTempTable("parquetFile");
