@@ -71,7 +71,7 @@ public class ComCache {
 	        		});
 
 	        DataFrame COMdf = sqlContext.createDataFrame(moiCache, COMschema.class);
-	        COMdf.show();
+	        COMdf.show((int)COMdf.count());
 	        COMdf.save(comCacheLoc+"/comCache.parquet", SaveMode.Append);
 	  }
 

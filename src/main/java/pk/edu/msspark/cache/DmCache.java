@@ -71,7 +71,7 @@ public class DmCache {
 	        		});
 
 	        DataFrame DMdf = sqlContext.createDataFrame(moiCache, DMschema.class);
-	        DMdf.show();
+	        DMdf.show((int)DMdf.count());
 	        DMdf.save(dmCacheLoc+"/dmCache.parquet", SaveMode.Append);
 	  }
 
