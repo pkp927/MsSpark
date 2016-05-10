@@ -72,8 +72,8 @@ public class DmCache {
 	        		});
 
 	        DataFrame DMdf = sqlContext.createDataFrame(moiCache, DMschema.class);
-	        DMdf.show((int)DMdf.count());
-	        //DMdf.save(dmCacheLoc+"/dmCache.parquet", SaveMode.Append);
+	        DMdf.show();
+	        DMdf.save(dmCacheLoc+"/dmCache.parquet", SaveMode.Append);
 	  }
 
 	  public static class DMschema implements Serializable{

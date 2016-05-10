@@ -75,8 +75,8 @@ public class MoiCache {
 	        		});
 
 	        DataFrame MOIdf = sqlContext.createDataFrame(moiCache, MOIschema.class);
-	        MOIdf.show((int)MOIdf.count());
-	        //MOIdf.save(moiCacheLoc+"/moiCache.parquet", SaveMode.Append);
+	        MOIdf.show();
+	        MOIdf.save(moiCacheLoc+"/moiCache.parquet", SaveMode.Append);
 	  }
 
 	  public static class MOIschema implements Serializable{

@@ -75,8 +75,8 @@ public class RogCache {
 	        		});
 
 	        DataFrame ROGdf = sqlContext.createDataFrame(ROGCache, ROGschema.class);
-	        ROGdf.show((int)ROGdf.count());
-	        //ROGdf.save(rogCacheLoc+"/rogCache.parquet", SaveMode.Append);
+	        ROGdf.show();
+	        ROGdf.save(rogCacheLoc+"/rogCache.parquet", SaveMode.Append);
 	  }
 
 	  public static class ROGschema implements Serializable{
