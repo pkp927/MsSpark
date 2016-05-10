@@ -73,7 +73,7 @@ public class SomCache {
 	        		});
 
 	        DataFrame SOMdf = sqlContext.createDataFrame(SOMCache, SOMschema.class);
-	        SOMdf.show((int)SOMdf.count());
+	        SOMdf.show();
 	        SOMdf.save(somCacheLoc+"/somCache.parquet", SaveMode.Append);
 	  }
 

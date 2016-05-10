@@ -16,8 +16,8 @@ import scala.Tuple2;
 public class RogCache {
 	
 	  public static SelectParameters checkROGcache(SQLContext sqlContext, String rogCacheLoc, SelectParameters param){
-		  	File f = new File(rogCacheLoc+"/rogCache.parquet");
-		  	if(!f.exists()){param.cached = false; return param;} 
+		  	//File f = new File(rogCacheLoc+"/rogCache.parquet");
+		  	//if(!f.exists()){param.cached = false; return param;} 
 		    DataFrame parquetFile = sqlContext.read().parquet(rogCacheLoc+"/rogCache.parquet");
 		if(parquetFile==null){param.cached = false; return param;} 
 	    	parquetFile.registerTempTable("parquetFile");

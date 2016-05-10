@@ -18,8 +18,8 @@ import scala.Tuple2;
 public class SDHCache {
 	
 	  public static SelectParameters checkSDHcache(SQLContext sqlContext, String sdhCacheLoc, SelectParameters param){
-		    File f = new File(sdhCacheLoc+"/sdhCache.parquet");
-		  	if(!f.exists()){param.cached = false; return param;} 
+		    //File f = new File(sdhCacheLoc+"/sdhCache.parquet");
+		  	//if(!f.exists()){param.cached = false; return param;} 
 		  	DataFrame parquetFile = sqlContext.read().parquet(sdhCacheLoc+"/sdhCache.parquet");
 		if(parquetFile==null){param.cached = false; return param;} 
 	    	parquetFile.registerTempTable("parquetFile");
