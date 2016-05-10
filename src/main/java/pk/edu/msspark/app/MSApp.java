@@ -161,6 +161,9 @@ public class MSApp{
 	          SomCache.cacheSOMresult(sqlContext, SOM, cacheLoc, param);
 			  break;
 		  case ROG:
+			  Scanner reader = new Scanner(System.in);
+			  System.out.println("Enter the axis:");
+			  param.axis = reader.nextLine();
 		      ScalarRDD ROG = q.getROG(selData,param.axis);
 	          ROG.getScalarRDD().foreach(new PrintScaTuple());
 	          RogCache.cacheROGresult(sqlContext, ROG, cacheLoc, param);
@@ -171,6 +174,9 @@ public class MSApp{
 		      DmCache.cacheDMresult(sqlContext, DM, cacheLoc, param);
 			  break;
 		  case SDH:
+			  Scanner read = new Scanner(System.in);
+			  System.out.println("Enter the bin width:");
+			  param.bw = Integer.parseInt(read.nextLine());
 			  int[] sk = new int[0];
 			    if(!param.skip.isEmpty()){
 					String[] splitted = param.skip.split("\\s+");
