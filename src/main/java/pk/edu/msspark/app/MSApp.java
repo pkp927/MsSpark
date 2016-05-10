@@ -88,8 +88,8 @@ public class MSApp{
 			query = reader.nextLine();
 			
 			// check cache
-		    param = checkCache(sqlContext, cacheLoc, param, query);
-		    System.out.println("Cache found:"+param.cached+"\n");
+		    //param = checkCache(sqlContext, cacheLoc, param, query);
+		    //System.out.println("Cache found:"+param.cached+"\n");
 		    
 	    	// if not cached
 		    if(!param.cached){
@@ -114,7 +114,8 @@ public class MSApp{
 			    	}
 
 					// check cache
-				    param = checkCache(sqlContext, cacheLoc, param, query);
+				    //param = checkCache(sqlContext, cacheLoc, param, query);
+		    		    //System.out.println("Cache found:"+param.cached+"\n");
 				 
 				    // if not cached
 				    if(!param.cached){
@@ -146,27 +147,27 @@ public class MSApp{
 			  VectorRDD MOI = q.getMOI(selData);
 			  MOI.getVectorRDD().foreach(new PrintVecTuple());
 	          //MOI.getVectorRDD().coalesce(1,true).saveAsTextFile(outputLoc);
-			  MoiCache.cacheMOIresult(sqlContext, MOI, cacheLoc, param);
+			  //MoiCache.cacheMOIresult(sqlContext, MOI, cacheLoc, param);
 			  break;
 		  case COM:
 		      VectorRDD COM = q.getCOM(selData);
 		      COM.getVectorRDD().foreach(new PrintVecTuple());
-		      ComCache.cacheCOMresult(sqlContext, COM, cacheLoc, param);
+		      //ComCache.cacheCOMresult(sqlContext, COM, cacheLoc, param);
 			  break;
 		  case SOM:
 		      ScalarRDD SOM = q.getSOM(selData);
 	          SOM.getScalarRDD().foreach(new PrintScaTuple());
-	          SomCache.cacheSOMresult(sqlContext, SOM, cacheLoc, param);
+	          //SomCache.cacheSOMresult(sqlContext, SOM, cacheLoc, param);
 			  break;
 		  case ROG:
 		      ScalarRDD ROG = q.getROG(selData,param.axis);
 	          ROG.getScalarRDD().foreach(new PrintScaTuple());
-	          RogCache.cacheROGresult(sqlContext, ROG, cacheLoc, param);
+	          //RogCache.cacheROGresult(sqlContext, ROG, cacheLoc, param);
 			  break;
 		  case DM:
 		      VectorRDD DM = q.getDM(selData);
 		      DM.getVectorRDD().foreach(new PrintVecTuple());
-		      DmCache.cacheDMresult(sqlContext, DM, cacheLoc, param);
+		      //DmCache.cacheDMresult(sqlContext, DM, cacheLoc, param);
 			  break;
 		  case SDH:
 			  int[] sk = new int[0];
@@ -195,7 +196,7 @@ public class MSApp{
 				}
 			    HistogramRDD SDH = q.getSDH(selData, frames, param.bw);
 			    SDH.getHistogramRDD().foreach(new PrintTuple());
-			    SDHCache.cacheSDHresult(sqlContext, SDH, cacheLoc, param);
+			    //SDHCache.cacheSDHresult(sqlContext, SDH, cacheLoc, param);
 			    break;
 		  }
 	  }
