@@ -16,8 +16,8 @@ import scala.Tuple2;
 public class ComCache {
 	
 	  public static SelectParameters checkCOMcache(SQLContext sqlContext, String comCacheLoc, SelectParameters param){
-		    //File f = new File(comCacheLoc+"/comCache.parquet");
-		  	//if(!f.exists()){param.cached = false; return param;} 
+		    File f = new File(comCacheLoc+"/comCache.parquet");
+		  	if(!f.exists()){param.cached = false; return param;} 
 		  	DataFrame parquetFile = sqlContext.read().parquet(comCacheLoc+"/comCache.parquet");
 		if(parquetFile==null){param.cached = false; return param;} 
 	    	parquetFile.registerTempTable("parquetFile");

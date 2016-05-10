@@ -16,9 +16,10 @@ import scala.Tuple2;
 public class DmCache {
 	
 	  public static SelectParameters checkDMcache(SQLContext sqlContext, String dmCacheLoc, SelectParameters param){
-		    File f = new File(dmCacheLoc+"/dmCache.parquet");
-		  	if(!f.exists()){param.cached = false; return param;}   
+		   // File f = new File(dmCacheLoc+"/dmCache.parquet");
+		  	//if(!f.exists()){param.cached = false; return param;}   
 		    DataFrame parquetFile = sqlContext.read().parquet(dmCacheLoc+"/dmCache.parquet");
+		if(parquetFile==null){param.cached = false; return param;} 
 	    	parquetFile.registerTempTable("parquetFile");
 	    	DataFrame result;
 

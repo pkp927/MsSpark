@@ -74,7 +74,7 @@ public class SomCache {
 
 	        DataFrame SOMdf = sqlContext.createDataFrame(SOMCache, SOMschema.class);
 	        SOMdf.show((int)SOMdf.count());
-	        SOMdf.save(somCacheLoc+"/somCache.parquet", SaveMode.Append);
+	        //SOMdf.save(somCacheLoc+"/somCache.parquet", SaveMode.Append);
 	  }
 
 	  public static class SOMschema implements Serializable{

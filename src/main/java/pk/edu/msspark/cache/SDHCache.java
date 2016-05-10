@@ -77,7 +77,7 @@ public class SDHCache {
 
 	        DataFrame SDHdf = sqlContext.createDataFrame(moiCache, SDHschema.class);
 	        SDHdf.show((int)SDHdf.count());
-	        SDHdf.save(sdhCacheLoc+"/sdhCache.parquet", SaveMode.Append);
+	        //SDHdf.save(sdhCacheLoc+"/sdhCache.parquet", SaveMode.Append);
 	  }
 
 	  public static class SDHschema implements Serializable{
